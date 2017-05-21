@@ -85,7 +85,7 @@ already exist on the destination, moved and renamed files in the source are not
 copied but directly hardlinked on the destination as the mapping from the
 mv-record to the destination still exists. The rsync flag --no-inc-recursive is
 important to prevent rsync from starting the copy process before collecting all
-files, which can destroy the simultaneously transfering of source data and
+files, which can destroy the simultaneously transferring of source data and
 mv-record data.
 
 The mv-record is not required, the folder can safely be removed without
@@ -115,10 +115,10 @@ Example: --day=7
    oldest backup. Otherwise break.
 
 For multiple intervals this process is repeated, starting with the shortest
-interval (hour -> day -> week -> month -> year). Backups, which are already marked to
-keep by a previous interval, do not count. The intervals are defined in such a
-way that a decreasing by the interval length jumps back to the end of the
-previous interval type:
+interval (hour -> day -> week -> month -> year). Backups, which are already
+marked to keep by a previous interval, do not count. The intervals are defined
+in such a way that a decreasing by the interval length jumps back to the end of
+the previous interval type:
 
 Example, date is Wed., 2017-03-08 15:23:11
 
@@ -133,7 +133,9 @@ intervals in the long term, even if the backups are performed irregularly.
 Always the last backup of an interval is kept, e.g. the backup of the last day 
 of a week, month, year.
 
-There is a small script in the folder [test/clean_simulation.py](test/clean_simulation.py), where the effect of the clean process with different intervals and backup times can be simulated.
+There is a small script in the folder
+[test/clean_simulation.py](test/clean_simulation.py), where the effect of the
+clean process with different intervals and backup times can be simulated.
 
 
 ## Clean script
