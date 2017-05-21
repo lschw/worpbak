@@ -1,0 +1,114 @@
+#!/usr/bin/env python3
+
+# worpbak - a snapshot backup script based on rsync
+# Copyright (C) 2017 Lukas Schwarz
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import argparse
+import logging, logging.handlers
+import datetime
+import worpbak
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "storage_path",
+    help="path to backup storage"
+)
+parser.add_argument(
+    "--version",
+    action="version",
+    version="worpbak {}".format(worpbak.version)
+)
+parser.add_argument(
+    "--dry-run",
+    action="store_true",
+    default=False,
+    help="perform dry run"
+)
+parser.add_argument(
+    "--hour",
+    type=int,
+    help="hour interval for clean process"
+)
+parser.add_argument(
+    "--day",
+    type=int,
+    help="day interval for clean process"
+)
+parser.add_argument(
+    "--week",
+    type=int,
+    help="week interval for clean process"
+)
+parser.add_argument(
+    "--month",
+    type=int,
+    help="month interval for clean process"
+)
+parser.add_argument(
+    "--year",
+    type=int,
+    help="year interval for clean process"
+)
+args = parser.parse_args()
+
+# create intervals
+intervals = []
+if args.hour:
+    intervals.append(worpbak.HourInterval(args.hour))
+if args.day:
+    intervals.append(worpbak.DayInterval(args.day))
+if args.week:
+    intervals.append(worpbak.WeekInterval(args.week))
+if args.month:
+    intervals.append(worpbak.MonthInterval(args.month))
+if args.year:
+    intervals.append(worpbak.YearInterval(args.year))
+
+# setup logging
+log = logging.getLogger("worpbak")
+log.setLevel(logging.INFO)
+
+# console handler
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(worpbak.LogMsgFormatter())
+log.addHandler(ch)
+
+# log program call arguments
+log.info("This is worpbak-clean {}".format(worpbak.version))
+if args.dry_run:
+    log.info("  dry-run")
+log.info("  clean-intervals : {}".format(", ".join(
+    "{}({})".format(x.__class__.__name__,x.maxn) for x in intervals
+)))
+
+try:
+    # check for valid storage
+    if not worpbak.check_dir(args.storage_path, "w"):
+        log.error("Storage directory does not exist or is not writeable")
+        exit(1)
+except Exception as e:
+    log.error("IO Error:\n  {}".format(e))
+    import traceback
+    log.error(traceback.format_exc())
+    exit(1)
+
+# clean backups
+log.info("Clean backup storage")
+worpbak.clean(args.storage_path, intervals, dry_run=args.dry_run)
+

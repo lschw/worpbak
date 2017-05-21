@@ -1,0 +1,320 @@
+#!/usr/bin/env python3
+
+# worpbak - a snapshot backup script based on rsync
+# Copyright (C) 2017 Lukas Schwarz
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+import sys
+import os
+import argparse
+import logging, logging.handlers
+import datetime
+import worpbak
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "src_path",
+    help="path to backup source"
+)
+parser.add_argument(
+    "storage_path",
+    help="path to backup storage"
+)
+parser.add_argument(
+    "--version",
+    action="version",
+    version="worpbak {}".format(worpbak.version)
+)
+parser.add_argument(
+    "--verbose",
+    action="store_true",
+    default=False,
+    help="increase verbosity"
+)
+parser.add_argument(
+    "--mv-record",
+    action="store_true",
+    default=False,
+    help="enable the usage of mv-record"
+)
+parser.add_argument(
+    "--mv-record-path",
+    help="set path to mv-record explicitly"
+)
+parser.add_argument(
+    "--force",
+    action="store_true",
+    default=False,
+    help="force backup in the case of no changes"
+)
+parser.add_argument(
+    "--rsync-args",
+    default="",
+    help="additional rsync arguments"
+)
+parser.add_argument(
+    "--clean",
+    action="store_true",
+    default=False,
+    help="clean up storage directory after the backup"
+)
+parser.add_argument(
+    "--hour",
+    type=int,
+    help="hour interval for clean process"
+)
+parser.add_argument(
+    "--day",
+    type=int,
+    help="day interval for clean process"
+)
+parser.add_argument(
+    "--week",
+    type=int,
+    help="week interval for clean process"
+)
+parser.add_argument(
+    "--month",
+    type=int,
+    help="month interval for clean process"
+)
+parser.add_argument(
+    "--year",
+    type=int,
+    help="year interval for clean process"
+)
+parser.add_argument(
+    "--log-file",
+    help="path to log file"
+)
+parser.add_argument(
+    "--log-max-size",
+    type=float,
+    default=10,
+    help="maximum size of logfile in MB (default 10)"
+)
+parser.add_argument(
+    "--log-rotate",
+    type=int,
+    default=3,
+    help="rotating logfile count (default 3)"
+)
+args = parser.parse_args()
+
+# set default value for `args.mv_record_path`
+if not args.mv_record:
+    args.mv_record_path = None
+if args.mv_record and not args.mv_record_path:
+    args.mv_record_path = os.path.join(
+        os.path.dirname(args.src_path.rstrip("/")),
+        ".worpbak_"+os.path.basename(args.src_path.rstrip("/"))
+    )
+
+# create intervals
+intervals = []
+if args.clean:
+    if args.hour:
+        intervals.append(worpbak.HourInterval(args.hour))
+    if args.day:
+        intervals.append(worpbak.DayInterval(args.day))
+    if args.week:
+        intervals.append(worpbak.WeekInterval(args.week))
+    if args.month:
+        intervals.append(worpbak.MonthInterval(args.month))
+    if args.year:
+        intervals.append(worpbak.YearInterval(args.year))
+
+# create path to new backup
+backup_path = os.path.join(args.storage_path, worpbak.new_backup_name())
+
+# setup logging
+log = logging.getLogger("worpbak")
+log.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+
+# console handler
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+ch.setFormatter(worpbak.LogMsgFormatter())
+log.addHandler(ch)
+
+# file handler
+if args.log_file:
+    try:
+        # add newline to already existing log file to separate log entries from
+        # different backups
+        if os.path.isfile(args.log_file):
+            with open(args.log_file, "a") as fh:
+                fh.write("\n")
+        
+        ch = logging.handlers.RotatingFileHandler(
+            args.log_file,
+            maxBytes=0, # disable automatical rollover to prevent splitting of
+                        # log record from a single backup
+            backupCount=args.log_rotate
+        )
+        # do rollover if log file size exceeds threshold
+        if os.path.getsize(args.log_file)/1e6 > args.log_max_size:
+            ch.doRollover()
+
+        ch.setLevel(logging.DEBUG if args.verbose else logging.INFO)
+        ch.setFormatter(worpbak.LogMsgFormatter())
+        log.addHandler(ch)
+    except Exception as e:
+        log.error("Error while setting up log file: {}".format(e))
+        import traceback
+        log.error(traceback.format_exc())
+        exit(1)
+
+# log program call arguments
+log.info("This is worpbak {}".format(worpbak.version))
+log.info("  date-time       : {}".format(
+    datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+)
+log.info("  src-path        : {}".format(args.src_path))
+log.info("  storage-path    : {}".format(args.storage_path))
+log.info("  mv-record-path  : {}".format(args.mv_record_path))
+log.info("  backup-path     : {}".format(backup_path))
+log.info("  force           : {}".format(args.force))
+log.info("  rsync-args      : {}".format(args.rsync_args))
+if args.log_file :
+    log.info("  log-file        : {}".format(args.log_file))
+    log.info("  log-max-file    : {} MB".format(args.log_max_size))
+    log.info("  log-rotate      : {}".format(args.log_rotate))
+if args.clean:
+    log.info("  clean-intervals : {}".format(", ".join(
+        "{}({})".format(x.__class__.__name__,x.maxn) for x in intervals
+    )))
+
+# ensure source and storage are not both remote
+if ":" in args.src_path and ":" in args.storage_path:
+    log.error("Source and storage can not be both remote")
+    exit(1)
+
+try:
+    # check for valid source
+    if not worpbak.check_dir(args.src_path, "r"):
+        log.error("Source directory does not exist or is not readable")
+        exit(1)
+
+    # check for valid storage
+    if not worpbak.check_dir(args.storage_path, "w"):
+        log.error("Storage directory does not exist or is not writeable")
+        exit(1)
+
+    # ensure source is not the same as storage
+    if worpbak.eq_dir(args.src_path, args.storage_path):
+        log.error("Source and storage must not be equal")
+        exit(1)
+
+    # ensure backup does not already exist
+    if worpbak.check_dir(backup_path, "w"):
+        log.error("Backup '{}' already exists".format(backup_path))
+        exit(1)
+except Exception as e:
+    log.error("IO Error:\n  {}".format(e))
+    import traceback
+    log.error(traceback.format_exc())
+    exit(1)
+
+# check for mv-record
+if args.mv_record:
+    try:
+        # ensure source and mv-record are on the same host
+        if ":" in args.src_path and ":" not in args.mv_record_path or \
+                ":" not in args.src_path and ":" in args.mv_record_path:
+            raise ValueError(
+                "Source directory and mv-record are not on the same host"
+            )
+        
+        # ensure mv-record is not inside the source directory
+        if worpbak.is_subdir(args.mv_record_path, args.src_path):
+            raise ValueError(
+                "The mv-record must not be inside the source directory"
+            )
+        
+        # setup mv-record directory (if not already existing)
+        if not worpbak.check_dir(args.mv_record_path, "w"):
+            try:
+                worpbak.hardlink_dir(args.src_path, args.mv_record_path)
+            except Exception as e:
+                worpbak.rm_dir(args.mv_record_path)
+                raise
+    except Exception as e:
+        log.error("Error with mv-record: {}".format(e))
+        import traceback
+        log.error(traceback.format_exc())
+        exit(1)
+
+# get available backups
+# sort descending -> first backup is last backup
+backups = worpbak.get_backups(args.storage_path, sort="desc")
+backup_last_path = None
+if backups:
+    log.info("The following previous backups were found:\n{}".format(
+        worpbak.fmt_backup_list(backups))
+    )
+    backup_last_path = os.path.join(args.storage_path, backups[0].as_str())
+    
+    # check if there were changes since the last backup
+    if not args.force:
+        log.info("Checking for changes")
+        try:
+            changed = worpbak.backup(args.src_path, backup_path,
+                args.mv_record_path, backup_last_path, dry_run=True,
+                rsync_args=args.rsync_args, verbose=args.verbose
+            )
+            if not changed:
+                log.info("Source has not changed, cancel backup")
+                exit(0)
+            log.info("Source has changed")
+        except Exception as e:
+            log.error("Checking for changes failed: {}".format(e))
+            import traceback
+            log.error(traceback.format_exc())
+            exit(1)
+else:
+    log.info("There are no previous backups")
+
+log.info("Start backup on {}".format(
+    datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+)
+
+# run backup
+try:
+    changed = worpbak.backup(args.src_path, backup_path, args.mv_record_path,
+        backup_last_path, rsync_args=args.rsync_args, verbose=args.verbose
+    )
+except Exception as e:
+    log.error(
+        "Backup failed: {}\n".format(e) +
+        "Check for possible left over temporary folders"
+    )
+    import traceback
+    log.error(traceback.format_exc())
+    exit(1)
+
+# update mv-record
+if args.mv_record:
+    log.info("Update mv-record")
+    worpbak.hardlink_dir(args.src_path, args.mv_record_path)
+
+# clean backups
+if args.clean:
+    log.info("Clean backup storage")
+    worpbak.clean(args.storage_path, intervals)
+
+log.info("Backup ended successfully on {}".format(
+    datetime.datetime.today().strftime("%Y-%m-%d %H:%M:%S"))
+)
