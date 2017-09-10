@@ -169,9 +169,13 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
                 if not callback(line):
                     process.kill()
     
-    if raise_exc and process.returncode != 0:
-        raise EnvironmentError("\n >> " + "\n >> ".join(output))
-    return process.returncode, output
+        if raise_exc and process.returncode != 0:
+            raise EnvironmentError("\n >> " + "\n >> ".join(output))
+        return process.returncode, output
+    
+    raise EnvironmentError(
+        "Starting process of command '{}' failed".format(cmd)
+    )
 
 
 def get_path(path):
