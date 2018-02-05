@@ -257,7 +257,7 @@ def hardlink_dir(src_path, dest_path):
     cmd +="--link-dest=\"{}/\" \"{}/\" \"{}/\"".format(
         src_path, src_path, dest_path
     )
-    cmd_remote(host, cmd)
+    cmd = cmd_remote(host, cmd)
     shell_cmd(cmd, raise_exc=True)
 
 
@@ -269,7 +269,7 @@ def check_dir(path, mode="r"):
     path = get_path(path)
     cmd = "[[ -d \"{}\" && -{} \"{}\" ]] && echo 1 || echo 0".format(
         path, mode, path)
-    cmd_remote(host, cmd)
+    cmd = cmd_remote(host, cmd)
     return shell_cmd(cmd, raise_exc=True)[1] == ["1"]
 
 
@@ -280,7 +280,7 @@ def rm_dir(path):
     host = get_host(path)
     path = get_path(path)
     cmd = "rm -rf \"{}\"".format(path)
-    cmd_remote(host, cmd)
+    cmd = cmd_remote(host, cmd)
     shell_cmd(cmd, raise_exc=True)
 
 
@@ -292,7 +292,7 @@ def mv_dir(src_path, dest_path):
     src_path = get_path(src_path)
     dest_path = get_path(dest_path)
     cmd = "mv \"{}\" \"{}\"".format(src_path, dest_path)
-    cmd_remote(host, cmd)
+    cmd = cmd_remote(host, cmd)
     shell_cmd(cmd, raise_exc=True)
 
 
@@ -305,7 +305,7 @@ def get_backups(path, sort="asc"):
     path = get_path(path)
     cmd = "cd \"{}\" ".format(path)
     cmd += "&& find . -maxdepth 1 -mindepth 1 -type d | tr -d \"./\""
-    cmd_remote(host, cmd)
+    cmd = cmd_remote(host, cmd)
     ret,output=shell_cmd(cmd, raise_exc=True)
     backups = []
     for f in sorted(output, reverse=(sort == "desc")):
