@@ -31,6 +31,9 @@ backup_regex = r"^([0-9]{4})-([0-9]{2})-([0-9]{2})_" \
 # date format for backup folders
 date_fmt = '%Y-%m-%d_%H-%M-%S'
 
+# path to ssh-key file
+ssh_key = None
+
 
 class Backup:
     def __init__(self, date):
@@ -168,7 +171,7 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
             if callback:
                 if not callback(line):
                     process.kill()
-    
+        
         if raise_exc and process.returncode != 0:
             raise EnvironmentError("\n >> " + "\n >> ".join(output))
         return process.returncode, output
@@ -202,7 +205,10 @@ def cmd_remote(host, cmd):
     """
     Add ssh connection command to command `cmd`
     """
-    return "ssh -q {} \"{}\"".format(host, cmd) if host else cmd
+    return "ssh {} -q {} \"{}\"".format(
+        " -i {}".format(ssh_key) if ssh_key else "",
+        host, cmd
+    ) if host else cmd
 
 
 def eq_dir(path1, path2):
@@ -240,8 +246,12 @@ def hardlink_dir(src_path, dest_path):
     host = get_host(src_path)
     src_path = get_path(src_path)
     dest_path = get_path(dest_path)
-    cmd = "rsync -rlptgoDEAXWSH --delete --link-dest="
-    cmd +="\"{}/\" \"{}/\" \"{}/\"".format(src_path, src_path, dest_path)
+    cmd = "rsync -rlptgoDEAXWSH --delete {}".format(
+        "-e \"ssh -i '{}'\"".format(ssh_key) if ssh_key else ""
+    )
+    cmd +="--link-dest=\"{}/\" \"{}/\" \"{}/\"".format(
+        src_path, src_path, dest_path
+    )
     cmd_remote(host, cmd)
     shell_cmd(cmd, raise_exc=True)
 
@@ -445,6 +455,9 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
     # --delete : delete extraneous files from destination dirs
     # --stats : show statistics at end of run
     cmd = "rsync -rlptgoDEAXWSHv --delete --no-inc-recursive " + rsync_args
+    cmd += "{}".format(
+        "-e \"ssh -i '{}'\"".format(ssh_key) if ssh_key else ""
+    )
     if dry_run:
         cmd += " -n --stats"
         

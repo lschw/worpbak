@@ -65,6 +65,11 @@ parser.add_argument(
     help="additional rsync arguments"
 )
 parser.add_argument(
+    "--ssh-key",
+    default="",
+    help="path to ssh key file, e.g. ~/.ssh/id_rsa"
+)
+parser.add_argument(
     "--clean",
     action="store_true",
     default=False,
@@ -177,6 +182,10 @@ if args.log_file:
         log.error(traceback.format_exc())
         exit(1)
 
+# save ssh key
+if args.ssh_key:
+    worpbak.ssh_key = args.ssh_key
+
 # log program call arguments
 log.info("This is worpbak {}".format(worpbak.version))
 log.info("  date-time       : {}".format(
@@ -188,6 +197,7 @@ log.info("  mv-record-path  : {}".format(args.mv_record_path))
 log.info("  backup-path     : {}".format(backup_path))
 log.info("  force           : {}".format(args.force))
 log.info("  rsync-args      : {}".format(args.rsync_args))
+log.info("  ssh-key         : {}".format(args.ssh_key))
 if args.log_file :
     log.info("  log-file        : {}".format(args.log_file))
     log.info("  log-max-file    : {} MB".format(args.log_max_size))
