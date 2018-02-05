@@ -36,7 +36,7 @@ arguments. It may be useful to write a bash script to save the configuration.
         --mv-record \
         --log-max-size=5 \
         --log-file=/path/to/logfile.log \
-        --log-rotate=3
+        --log-rotate=3 \
         --clean \
         --day=7 \
         --week=4 \
@@ -63,6 +63,23 @@ After the backup, the storage folder is cleaned. The algorithm keeps one backup
 of each of the last 7 days, one backup of each of the last 4 weeks, one backup 
 of each of the last 6 months and one backup of each of the last 10 years. (see 
 section about the clean-algorithm below)
+
+The source and storage path can be remote. With the flag "--ssh-key" one can
+specify explicitly the ssh keyfile to use. An example could look like
+
+    worpbak \
+        --mv-record \
+        --log-max-size=5 \
+        --log-file=/path/to/logfile.log \
+        --log-rotate=3 \
+        --clean \
+        --day=7 \
+        --week=4 \
+        --month=6 \
+        --year=10 \
+        --ssh-key=~/.ssh/my_key_file \
+        user@host:/path/to/src/dir \
+        /path/to/storage/dir
 
 Run
 
