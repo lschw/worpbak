@@ -161,8 +161,9 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
     """
     output = [] # buffer for process output
     
-    with subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-            shell=True, executable="/bin/bash") as process:
+    with subprocess.Popen(cmd, stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT, shell=True,
+            executable="/bin/bash") as process:
         for line in process.stdout:
             line = line.decode("utf-8").strip()
             if line == "":
@@ -171,6 +172,10 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
             if callback:
                 if not callback(line):
                     process.kill()
+        
+        # Wait for process to end to ensure that
+        # `process.returncode` is not None
+        process.wait()
         
         if raise_exc and process.returncode != 0:
             raise EnvironmentError("\n >> " + "\n >> ".join(output))
