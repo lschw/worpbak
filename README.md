@@ -65,7 +65,8 @@ of each of the last 6 months and one backup of each of the last 10 years. (see
 section about the clean-algorithm below)
 
 The source and storage path can be remote. With the flag "--ssh-key" one can
-specify explicitly the ssh keyfile to use. An example could look like
+specify explicitly the ssh keyfile to use. *The path to the keyfile must be
+absolute, otherwise rsync will not work*. An example could look like
 
     worpbak \
         --mv-record \
@@ -77,7 +78,7 @@ specify explicitly the ssh keyfile to use. An example could look like
         --week=4 \
         --month=6 \
         --year=10 \
-        --ssh-key=~/.ssh/my_key_file \
+        --ssh-key=/home/user/.ssh/my_key_file \
         user@host:/path/to/src/dir \
         /path/to/storage/dir
 
