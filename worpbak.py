@@ -251,9 +251,7 @@ def hardlink_dir(src_path, dest_path):
     host = get_host(src_path)
     src_path = get_path(src_path)
     dest_path = get_path(dest_path)
-    cmd = "rsync -rlptgoDEAXWSH --delete {}".format(
-        "-e \"ssh -i '{}'\"".format(ssh_key) if ssh_key else ""
-    )
+    cmd = "rsync -rlptgoDEAXWSH --delete "
     cmd +="--link-dest=\"{}/\" \"{}/\" \"{}/\"".format(
         src_path, src_path, dest_path
     )
