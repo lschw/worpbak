@@ -5,12 +5,12 @@
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -40,7 +40,7 @@ class Backup:
         self.date = date # date of backup
         self.remove = False # flag whether to remove backup
         self.msg = None # info message
-    
+
     def as_str(self):
         return self.date.strftime(date_fmt)
 
@@ -69,7 +69,7 @@ class Interval:
 class YearInterval(Interval):
     def __init__(self, maxn):
         Interval.__init__(self, maxn, 365)
-    
+
     def lower_boundary(self, date):
         tt = date.timetuple()
         diff = datetime.timedelta(
@@ -84,7 +84,7 @@ class YearInterval(Interval):
 class MonthInterval(Interval):
     def __init__(self, maxn):
         Interval.__init__(self, maxn, 30)
-    
+
     def lower_boundary(self, date):
         diff = datetime.timedelta(
             days=date.day-1,
@@ -98,7 +98,7 @@ class MonthInterval(Interval):
 class WeekInterval(Interval):
     def __init__(self, maxn):
         Interval.__init__(self, maxn, 7)
-    
+
     def lower_boundary(self, date):
         tt = date.timetuple()
         diff = datetime.timedelta(
@@ -113,7 +113,7 @@ class WeekInterval(Interval):
 class DayInterval(Interval):
     def __init__(self, maxn):
         Interval.__init__(self, maxn, 1)
-    
+
     def lower_boundary(self, date):
         diff = datetime.timedelta(
             hours=date.hour,
@@ -126,7 +126,7 @@ class DayInterval(Interval):
 class HourInterval(Interval):
     def __init__(self, maxn):
         Interval.__init__(self, maxn, 1./24)
-    
+
     def lower_boundary(self, date):
         diff = datetime.timedelta(
             minutes=date.minute,
@@ -148,19 +148,19 @@ class LogMsgFormatter(logging.Formatter):
 def shell_cmd(cmd, callback=None, raise_exc=False):
     """
     Execute external shell command
-    
+
     callback : function which is called for each output line from running
                process. If the functions does not return True, the process
                will be killed
     raise_exc : if True, an exception will be thrown if the external command
                 does not have an exit code of 0
-    
+
     returns ret,output
         ret : return code of command
         output : all lines of output from process as list
     """
     output = [] # buffer for process output
-    
+
     with subprocess.Popen(cmd, stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT, shell=True,
             executable="/bin/bash") as process:
@@ -172,15 +172,15 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
             if callback:
                 if not callback(line):
                     process.kill()
-        
+
         # Wait for process to end to ensure that
         # `process.returncode` is not None
         process.wait()
-        
+
         if raise_exc and process.returncode != 0:
             raise EnvironmentError("\n >> " + "\n >> ".join(output))
         return process.returncode, output
-    
+
     raise EnvironmentError(
         "Starting process of command '{}' failed".format(cmd)
     )
@@ -189,7 +189,7 @@ def shell_cmd(cmd, callback=None, raise_exc=False):
 def get_path(path):
     """
     Extract path from remote path string
-    
+
     example:
     user@host:/foo/bar/bar --> /foo/bar/baz
     """
@@ -199,7 +199,7 @@ def get_path(path):
 def get_host(path):
     """
     Extract host from remote path string
-    
+
     example:
     user@host:/foo/bar/bar --> user@host
     """
@@ -244,7 +244,7 @@ def hardlink_dir(src_path, dest_path):
     """
     Clone directory tree `src_path` to `dest_path` by creating hardlinks to all
     files under `src_path`
-    
+
     rsync is used to clone the directory structure to preserve symlinks. A
     cloning via "cp -rlp src_path dest_path" would not work.
     """
@@ -341,7 +341,7 @@ def new_tmp_src(mv_record_path, src_path):
     Generate new temporary name for source folder
     """
     name = "{}.tmp".format(random.randint(10000000,99999999))
-    
+
     # ensure there is no file/folder with this name in the directory
     # `mv_record_path` and dirname(`src_path`)
     while check_dir(os.path.join(mv_record_path, name)) or \
@@ -363,7 +363,7 @@ def rsync_cb(line):
     """
     log = logging.getLogger("worpbak")
     log.debug(" (rsync) {}".format(line))
-    
+
     # cancel rsync if errors occur (marked by lines starting with "rsync:")
     return (not line.startswith("rsync:"))
 
@@ -372,7 +372,7 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
         dry_run=False, rsync_args="", verbose=False):
     """
     Perform backup with the rsync command
-    
+
     src_path : path to source directory
     dest_path : path to destination directory
     mv_record_path : path to mv-record
@@ -380,21 +380,21 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
     dry_run : whether to simulate rsync (True) or not (False)
     rsync_args : additional rsync arguments
     verbose : log rsync output (True) or not (False)
-    
+
     returns changed
         changed : only in dry_run mode: True if files have changed or False
-    
-    
+
+
     Backup strategy
-    
+
     1. if previous backup exists (`dest_last_path`) create hardlink named
        `dest_path`.tmp, which serves as temporary destination (`dest_tmp_path`)
-    
+
     if mv-record exists:
-    
+
         2. create temporary source directory (`src_tmp_path`) as hardlink to
-           source directory named as `src_path`.tmp 
-    
+           source directory named as `src_path`.tmp
+
         3. run rsync from `mv_record_path` AND `src_tmp_path` SIMULTANEOUSLY to
            the temporary destination `dest_tmp_path`
            --> file/folder structure in `mv_record_path` and `dest_tmp_path` is
@@ -407,21 +407,21 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
            --> this results in a subfolder named `src_tmp` inside
                `dest_tmp_path` with the new file/folder structure but files are
                hardlinked to existing files, depite file movements or renames
-    
+
         4. move temporary destination named `dest_tmp_path`/`src_tmp` to final
            destination `dest_path`
-    
+
         5. remove temporary folders `src_tmp_path` and `dest_tmp_path`
-    
+
     if no mv-record exists
-    
+
         2. run rsync from `src_path` to `dest_tmp_path`
-        
+
         3. rename `dest_tmp_path` to `dest_path`
-        
+
         4. remove temporary folder `src_tmp_path`
-    
-    
+
+
     Reasons for temporary destination and source
         destination : prevent invalid backups. only if rsnyc runs successfully
                       tmp folder is copied to final destination
@@ -430,7 +430,7 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
               same name. therefore a new random temporary source folder is used
     """
     log = logging.getLogger("worpbak")
-    
+
     # remove trailing slashes from paths
     src_path = src_path.rstrip("/")
     dest_path = dest_path.rstrip("/")
@@ -438,7 +438,7 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
         mv_record_path = mv_record_path.rstrip("/")
     if dest_last_path:
         dest_last_path = dest_last_path.rstrip("/")
-    
+
     # rsync command options:
     # -r : recurse into directories
     # -l : copy symlinks as symlinks
@@ -465,30 +465,30 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
     )
     if dry_run:
         cmd += " -n --stats"
-        
+
         # disable mv-record in the case of the dry run to get the correct
         # amount of created/deleted files
         mv_record_path = None
     elif not verbose:
         cmd += " -q"
-    
+
     # temporary destination directory
     dest_tmp_path = "{}.tmp".format(dest_path)
     if dest_last_path:
         # hardlink tmp destination to last backup
         hardlink_dir(dest_last_path, dest_tmp_path)
-    
+
     ret = 0
     output = []
-    
+
     # check if mv-record exists
     if mv_record_path and dest_last_path:
-        
+
         # create tmp source directory
         src_tmp = new_tmp_src(mv_record_path, src_path)
         src_tmp_path = os.path.join(os.path.dirname(src_path), src_tmp)
         hardlink_dir(src_path, src_tmp_path)
-        
+
         # run rsync
         cmd += " \"{}/\" \"{}\" \"{}/\"".format(
             quote_remote_path(mv_record_path),
@@ -498,43 +498,43 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
         log.info(" $ {}".format(cmd))
         try:
             ret,output = shell_cmd(cmd, rsync_cb, raise_exc=True)
-            
+
             # move tmp destination to final destination
             mv_dir(os.path.join(dest_tmp_path, src_tmp), dest_path)
         except Exception as e:
             rm_dir(dest_tmp_path) # clean up tmp folders
             rm_dir(src_tmp_path) # clean up tmp folders
             raise
-        
+
         # remove temporary src and dest folders
         rm_dir(dest_tmp_path)
         rm_dir(src_tmp_path)
-    
+
     # mv-record does not exist
     else:
-        
+
         # run rsync
         cmd += " \"{}/\" \"{}/\"".format(
             quote_remote_path(src_path),
             quote_remote_path(dest_tmp_path)
         )
         log.info(" $ {}".format(cmd))
-        
+
         try:
             ret,output = shell_cmd(cmd, rsync_cb, raise_exc=True)
-            
+
             if not dry_run:
                 # move tmp destination to final destination
                 mv_dir(dest_tmp_path, dest_path)
             else:
                 # remove tmp destination folder
                 rm_dir(dest_tmp_path)
-            
+
         except Exception as e:
             rm_dir(dest_tmp_path) # clean up
             raise
-    
-    
+
+
     if dry_run:
         # parse output to determine if src has changed. Look for lines
         # "Number of created files:"
@@ -555,17 +555,17 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
 def clean(path, intervals, dry_run=False, backups=None):
     """
     Clean backups based on interval rules
-    
+
     path : path to storage directory containing backups
     intervals : list of interval rules
     dry_run : only simulate clean
     backups : if not None use this list of backups
-    
+
     return list of marked backups
     """
     log = logging.getLogger("worpbak")
     intervals.sort(key=lambda x: x.size)
-    
+
     # get all backups sorted descending
     # -> backups[-1] = first backup
     # -> backups[0] = last backup
@@ -574,22 +574,22 @@ def clean(path, intervals, dry_run=False, backups=None):
     for backup in backups:
         backup.remove = True
         backup.msg = "REMOVE"
-    
+
     for interval in intervals:
         cur_date = backups[0].date # date counter for this interval
         bak_cnt = 0 # backup counter for this interval
-        
+
         # loop until date of first backup is reached or the number of backups
         # for this interval exceeds the maximum number
         # only backups which are not already kept based on a different interval
         # are counting for this interval
         while cur_date >= backups[-1].date and bak_cnt < interval.maxn:
             for backup in backups:
-                
+
                 # skip backup already marked for keeping
                 if not backup.remove:
                     continue
-                
+
                 # check if backup.date is within the interval boundary starting
                 # from cur_date backwards in time
                 if interval.in_boundary(cur_date, backup.date):
@@ -598,17 +598,17 @@ def clean(path, intervals, dry_run=False, backups=None):
                         interval.__class__.__name__)
                     bak_cnt += 1
                     break
-            
+
             # decrease `cur_date` not until backup list is looped totally
             cur_date = interval.lower_boundary(cur_date)
-    
+
     # show result
     log.info(fmt_backup_list(backups, True))
-    
+
     # remove backups
     if not dry_run:
         for backup in backups:
             if backup.remove:
                 rm_dir(os.path.join(path, backup.as_str()))
-    
+
     return backups

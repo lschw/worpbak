@@ -24,7 +24,7 @@ worpbak is a snapshot backup script based on rsync
 * if the mv-record feature is used, filesystem of source must support hardlinks
 
 ## Installation
-There is no installation required. Download the latest release, extract it and 
+There is no installation required. Download the latest release, extract it and
 execute [worpbak](worpbak).
 
 ## Usage
@@ -45,23 +45,23 @@ arguments. It may be useful to write a bash script to save the configuration.
         /path/to/src/dir \
         /path/to/storage/dir
 
-This creates a backup of the content of the folder "/path/to/src/dir" in the 
-folder "/path/to/storage/dir/YYYY-MM-DD_HH_MM_SS" with the current date/time. 
-If previous backups exist in the storage folder "/path/to/storage/dir", 
+This creates a backup of the content of the folder "/path/to/src/dir" in the
+folder "/path/to/storage/dir/YYYY-MM-DD_HH_MM_SS" with the current date/time.
+If previous backups exist in the storage folder "/path/to/storage/dir",
 unmodified files regarding to the latest previous backup are hardlinked. The
 backup is skipped, if there are no changes to the previous backup (can be
 enforced with the --force flag).
 
-In addition, the "--mv-record" flag enables the file movement record. This 
-allows to hardlink files in the backup, which were moved or renamed in the 
+In addition, the "--mv-record" flag enables the file movement record. This
+allows to hardlink files in the backup, which were moved or renamed in the
 source folder (see section about mv-record below).
 
 The progress of worpbak is logged in the file "/path/to/logfile.log", which is
 rotated if the file size exceed 5 MB. A maximum of 3 files is kept.
 
-After the backup, the storage folder is cleaned. The algorithm keeps one backup 
-of each of the last 7 days, one backup of each of the last 4 weeks, one backup 
-of each of the last 6 months and one backup of each of the last 10 years. (see 
+After the backup, the storage folder is cleaned. The algorithm keeps one backup
+of each of the last 7 days, one backup of each of the last 4 weeks, one backup
+of each of the last 6 months and one backup of each of the last 10 years. (see
 section about the clean-algorithm below)
 
 The source and storage path can be remote. With the flag "--ssh-key" one can
@@ -115,9 +115,9 @@ use space) in the mv-record until the next backup, where the folder is synced
 again to the source folder.
 
 ## Explanation of the clean algorithm
-The clean feature has the purpose to remove certain backups from the storage 
-folder to prevent an infinite growth of that folder. The clean algorithm bases 
-on different interval rules, which have a certain amount of backups associated 
+The clean feature has the purpose to remove certain backups from the storage
+folder to prevent an infinite growth of that folder. The clean algorithm bases
+on different interval rules, which have a certain amount of backups associated
 (set with the --year, --month, ... parameters).
 
 The algorithm keeps the specified amount of backups for each interval.
@@ -127,8 +127,8 @@ Example: --day=7
 1. Start with a date counter set to the date of the latest backup
 2. Check if there is a backup 1 day back in time, if yes, mark this backup to
    keep
-3. Decrease the date counter by 1 day and repeat 2., if the maximum backup 
-   count of 7 is not yet reached and the date counter is still larger than the 
+3. Decrease the date counter by 1 day and repeat 2., if the maximum backup
+   count of 7 is not yet reached and the date counter is still larger than the
    oldest backup. Otherwise break.
 
 For multiple intervals this process is repeated, starting with the shortest
@@ -147,7 +147,7 @@ Example, date is Wed., 2017-03-08 15:23:11
 
 This procedure has the advantage that the kept backups are consistent to the
 intervals in the long term, even if the backups are performed irregularly.
-Always the last backup of an interval is kept, e.g. the backup of the last day 
+Always the last backup of an interval is kept, e.g. the backup of the last day
 of a week, month, year.
 
 There is a small script in the folder
@@ -173,17 +173,17 @@ script.
 ## External backup script
 The script [worpbak-ext](worpbak-ext) allows for a second external backup of the
 storage directory, i.e. it copies the backups from the storage folder into an
-external storage while preserving all hardlinks to previous backups. Already 
-existing backups are skipped and the respective previous backup is used as 
+external storage while preserving all hardlinks to previous backups. Already
+existing backups are skipped and the respective previous backup is used as
 mv-record or previous backup. Backups existing in the external storage but not
-existing in the storage are not automatically removed. The 
-[worpbak-clean](worpbak-clean) script can be used the clean up the external 
+existing in the storage are not automatically removed. The
+[worpbak-clean](worpbak-clean) script can be used the clean up the external
 storage folder.
 
 ### Example:
 
 Let's assume we have the following backups in /path/to/storage/dir:
-    
+
     2017-03-08_23-59-59
     2017-04-07_23-59-59
     2017-05-07_23-59-59
@@ -206,7 +206,7 @@ has the following effect:
 * backup 2017-03-08_23-59-59 is copied
 * backup 2017-04-07_23-59-59 is skipped as it already exists
 * backup 2017-05-07_23-59-59 is copied with the backup
-  /path/to/storage/dir/2017-04-07_23-59-59 used as mv-record and the backup 
+  /path/to/storage/dir/2017-04-07_23-59-59 used as mv-record and the backup
   /path/to/external/storage/dir/2017-05-06_23-59-59 used as previous backup
 * backup 2017-06-08_23-59-59 is copied with the backup
   /path/to/storage/dir/2017-05-07_23-59-59 used as mv-record and the backup

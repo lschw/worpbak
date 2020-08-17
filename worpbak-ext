@@ -2,17 +2,17 @@
 
 # worpbak - a snapshot backup script based on rsync
 # Copyright (C) 2017 Lukas Schwarz
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -68,7 +68,7 @@ try:
     if not worpbak.check_dir(args.storage_path, "r"):
         log.error("Storage directory does not exist or is not readable")
         exit(1)
-    
+
     # check for valid external storage
     if not worpbak.check_dir(args.ext_path, "w"):
         log.error(
@@ -86,7 +86,7 @@ except Exception as e:
 backups = worpbak.get_backups(args.storage_path)
 for backup in backups:
     backups_ext = worpbak.get_backups(args.ext_path)
-    
+
     avail = False
     for backup_ext in backups_ext:
         if backup_ext.date == backup.date:
@@ -95,9 +95,9 @@ for backup in backups:
     if avail:
         log.debug("Skip existing backup {}".format(backup.as_str()))
         continue
-    
+
     log.info("Backup of '{}'".format(backup.as_str()))
-    
+
     # get previous backup from external storage
     prev_path = None
     for i,backup_ext in enumerate(backups_ext):
@@ -109,7 +109,7 @@ for backup in backups:
             break
     if not prev_path and backups_ext and backups_ext[-1].date < backup.date:
         prev_path = os.path.join(args.ext_path, backups_ext[-1].as_str())
-    
+
     # get previous backup from storage
     mv_record_path = None
     for i,backup2 in enumerate(backups):
@@ -119,17 +119,17 @@ for backup in backups:
                     mv_record_path = os.path.join(
                         args.storage_path, backups[i-1].as_str()
                     )
-                break 
-    
-    
+                break
+
+
     src_path = os.path.join(args.storage_path, backup.as_str())
     dest_path = os.path.join(args.ext_path, backup.as_str())
-    
+
     log.info("  src       : {}".format(src_path))
     log.info("  mv-record : {}".format(mv_record_path))
     log.info("  dest      : {}".format(dest_path))
     log.info("  prev      : {}".format(prev_path))
-    
+
     worpbak.backup(src_path, dest_path, mv_record_path,
         prev_path, rsync_args=args.rsync_args, verbose=args.verbose
     )

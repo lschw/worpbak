@@ -2,17 +2,17 @@
 
 # worpbak - a snapshot backup script based on rsync
 # Copyright (C) 2017 Lukas Schwarz
-# 
+#
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
@@ -162,7 +162,7 @@ if args.log_file:
         if os.path.isfile(args.log_file):
             with open(args.log_file, "a") as fh:
                 fh.write("\n")
-        
+
         ch = logging.handlers.RotatingFileHandler(
             args.log_file,
             maxBytes=0, # disable automatical rollover to prevent splitting of
@@ -247,13 +247,13 @@ if args.mv_record:
             raise ValueError(
                 "Source directory and mv-record are not on the same host"
             )
-        
+
         # ensure mv-record is not inside the source directory
         if worpbak.is_subdir(args.mv_record_path, args.src_path):
             raise ValueError(
                 "The mv-record must not be inside the source directory"
             )
-        
+
         # setup mv-record directory (if not already existing)
         if not worpbak.check_dir(args.mv_record_path, "w"):
             try:
@@ -276,7 +276,7 @@ if backups:
         worpbak.fmt_backup_list(backups))
     )
     backup_last_path = os.path.join(args.storage_path, backups[0].as_str())
-    
+
     # check if there were changes since the last backup
     if not args.force:
         log.info("Checking for changes")
