@@ -22,7 +22,7 @@ import subprocess
 import logging
 import random
 
-version = "0.2.1"
+version = "0.2.2"
 
 # regular expression for valid backup folder
 backup_regex = r"^([0-9]{4})-([0-9]{2})-([0-9]{2})_" \
