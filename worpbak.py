@@ -458,7 +458,7 @@ def backup(src_path, dest_path, mv_record_path=None, dest_last_path=None,
     # --delete : delete extraneous files from destination dirs
     # --stats : show statistics at end of run
     cmd = "rsync -rlptgoDEAXWSHv --delete --no-inc-recursive " + rsync_args
-    cmd += "{}".format(
+    cmd += " {}".format(
         "-e \"ssh -i '{}'\"".format(ssh_key) if ssh_key else ""
     )
     if dry_run:
