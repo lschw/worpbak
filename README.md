@@ -220,3 +220,21 @@ Finally, the backups in /path/to/external/storage/dir are
     2017-05-06_23-59-59
     2017-05-07_23-59-59
     2017-06-08_23-59-59
+
+
+## Backup overview and disk usage
+
+To get an overview over the backup,
+the individual snapshots can simply be viewed with
+
+    ls -l /path/to/storage/dir
+    
+To see the disk usage of the backup,
+one can use the ```du``` command
+
+    du -sh /path/to/storage/dir/*
+
+This lists all snapshots and their disk usage,
+considering the hardlinking of files.
+So typically, the first snapshot will be large,
+while the subsequent snapshots will be much smaller.
